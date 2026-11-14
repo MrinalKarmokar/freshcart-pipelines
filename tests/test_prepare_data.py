@@ -1,4 +1,10 @@
 # tests/test_prepare_data.py
+import sys
+from pathlib import Path
+
+# Ensure root is in sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from sklearn.datasets import load_iris
 from iris_project.transformers.prepare_data import transform
 
