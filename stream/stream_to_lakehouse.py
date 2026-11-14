@@ -123,7 +123,8 @@ def load_to_snowflake(raw_file_path, run_id, conn):
 
     # Upload to Snowflake stage
     print(f"[+] Uploading {raw_file_path} to @bronze.raw_stage/{stage_subpath}/")
-    cur.execute(f"PUT 'file://{raw_file_path.resolve()}' @bronze.raw_stage/{stage_subpath}/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE")
+    file_uri = raw_file_path.resolve().as_posix()
+    cur.execute(f"PUT 'file://{file_uri}' @bronze.raw_stage/{stage_subpath}/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE")
 
     # Ingest into Bronze
     cur.execute(f"""
