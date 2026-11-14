@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  test:
+    name: Lint & Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      # 1. Check out the code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Install uv (fast Python package manager)
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      # 3. Set up the Python version from the matrix
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      # 4. Install project + dev dependencies (reads pyproject.toml)
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      # 5. Run the test suite
+      - name: Run pytest
+        run: uv run pytest tests/ -v --tb=short

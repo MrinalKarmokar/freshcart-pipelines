@@ -1,0 +1,47 @@
+# ── Secrets & credentials ──────────────────────────────────────────────────
+.env
+*.env.*
+
+# ── Python build artefacts ─────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ── ML model files ─────────────────────────────────────────────────────────
+*.pkl
+*.pickle
+*.keras
+*.h5
+
+# ── Data files ─────────────────────────────────────────────────────────────
+*.csv
+*.tsv
+*.parquet
+*.json.gz
+
+# ── Mage / Prefect logs ────────────────────────────────────────────────────
+mage.log
+prefect.log
+.prefect/
+
+# ── Jupyter / Colab checkpoints ────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── Virtual environments (uv creates .venv by default) ────────────────────
+.venv/
+venv/
+env/
+
+# ── uv cache ───────────────────────────────────────────────────────────────
+.uv/
+
+# ── OS / editor noise ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# ── Landing / output directories ───────────────────────────────────────────
+freshcart_landing/
+output/
