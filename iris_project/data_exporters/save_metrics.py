@@ -21,12 +21,14 @@ def export_metrics(df, *args, **kwargs):
     """
     df.to_csv('iris_metrics.csv', index=False)
     print('Saved', len(df), 'metrics to iris_metrics.csv')
+    return df
 
 
 @test
-def test_metrics_file_created(output, *args):
+def test_metrics_file_created(output=None, *args, **kwargs):
     """
     Quality check: verifies that iris_metrics.csv was successfully created on disk.
+    Accepts output=None so it works whether Mage passes 0 or 1 arguments.
     """
     assert os.path.exists('iris_metrics.csv'), 'iris_metrics.csv was not created'
     df = pd.read_csv('iris_metrics.csv')
