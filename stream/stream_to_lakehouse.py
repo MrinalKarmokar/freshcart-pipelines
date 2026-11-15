@@ -21,9 +21,28 @@ from pathlib import Path
 
 import pika
 import snowflake.connector
+from dotenv import load_dotenv
 
 EXCHANGE_NAME = "rapido-dispatch"
 LANDING_DIR = Path("./freshcart_landing")
+
+
+def get_snowflake_credentials():
+    """Load and validate the credentials required for password authentication."""
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+    credentials = {
+        "SNOWFLAKE_ACCOUNT": os.getenv("SNOWFLAKE_ACCOUNT"),
+        "SNOWFLAKE_USER": os.getenv("SNOWFLAKE_USER"),
+        "SNOWFLAKE_PASSWORD": os.getenv("SNOWFLAKE_PASSWORD"),
+    }
+    missing = [name for name, value in credentials.items() if not value]
+    if missing:
+        names = ", ".join(missing)
+        raise RuntimeError(
+            f"Missing required Snowflake setting(s): {names}. "
+            "Set them in the environment or in a .env file in the project root."
+        )
+    return credentials
 
 
 # ---------------------------------------------------------------------------
@@ -121,17 +140,17 @@ def load_to_snowflake(raw_file_path, run_id, conn):
     stage_subpath = f"stream_batch/{run_id}"
     cur = conn.cursor()
 
-    # Upload to Snowflake stage
-    print(f"[+] Uploading {raw_file_path} to @bronze.raw_stage/{stage_subpath}/")
+    # Upload to Snowflake stage (uses the existing BRONZE.LANDING internal stage)
+    print(f"[+] Uploading {raw_file_path} to @bronze.landing/{stage_subpath}/")
     file_uri = raw_file_path.resolve().as_posix()
-    cur.execute(f"PUT 'file://{file_uri}' @bronze.raw_stage/{stage_subpath}/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE")
+    cur.execute(f"PUT 'file://{file_uri}' @bronze.landing/{stage_subpath}/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE")
 
     # Ingest into Bronze
     cur.execute(f"""
         COPY INTO bronze.orders_raw (source, run_id, extracted_at, raw)
         FROM (
           SELECT $1:source::STRING, $1:run_id::STRING, $1:extracted_at::TIMESTAMP_TZ, $1:data
-          FROM @bronze.raw_stage/{stage_subpath}/
+          FROM @bronze.landing/{stage_subpath}/
         )
         FILE_FORMAT = (TYPE = 'JSON')
     """)
@@ -252,6 +271,8 @@ def run_transformations(conn):
 # 4. Main Demonstration: Stream -> Bronze -> Gold + Idempotency Proof
 # ---------------------------------------------------------------------------
 def main():
+    credentials = get_snowflake_credentials()
+
     # 1. Collect from RabbitMQ
     orders = collect_stream_orders(duration_seconds=60)
 
@@ -275,17 +296,14 @@ def main():
     landing_file = write_landing("stream", orders, run_id)
 
     # 3. Connect to Snowflake
-    account = os.getenv("SNOWFLAKE_ACCOUNT", "YOUR_ACCOUNT")
-    user = os.getenv("SNOWFLAKE_USER", "YOUR_USER")
-    password = os.getenv("SNOWFLAKE_PASSWORD", "")
     warehouse = "FRESHCART_WH"
     database = "FRESHCART"
 
     print("[*] Connecting to Snowflake...")
     conn = snowflake.connector.connect(
-        account=account,
-        user=user,
-        password=password,
+        account=credentials["SNOWFLAKE_ACCOUNT"],
+        user=credentials["SNOWFLAKE_USER"],
+        password=credentials["SNOWFLAKE_PASSWORD"],
         warehouse=warehouse,
         database=database,
         role="ACCOUNTADMIN",

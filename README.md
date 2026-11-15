@@ -176,6 +176,18 @@ Located in [`stream/stream_to_lakehouse.py`](stream/stream_to_lakehouse.py):
 * Packages raw payloads via `write_landing()` and loads into Snowflake `bronze.orders_raw`.
 * Promotes through Silver and merges into `gold.fct_orders`.
 * **Idempotency Proof:** Re-running the identical batch appends to Bronze but results in zero duplicate rows and zero revenue distortion in Gold.
+* Before running, create a `.env` file in the project root with your Snowflake credentials (the file is git-ignored):
+  ```dotenv
+  SNOWFLAKE_ACCOUNT=your_account_identifier
+  SNOWFLAKE_USER=your_username
+  SNOWFLAKE_PASSWORD=your_password
+  ```
+  Then run the dispatcher and consumer in separate terminals:
+  ```powershell
+  python stream\dispatcher.py
+  python stream\stream_to_lakehouse.py
+  ```
+  The consumer checks these settings before waiting for RabbitMQ messages and reports any missing variables.
 
 ---
 
